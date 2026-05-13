@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Eventos RD</title>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-dark bg-primary mb-4">
+        <div class="container"> <span class="navbar-brand">GestionEventos API</span> </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            <!-- Formulario de Filtro y Creación -->
+            <div class="col-md-4">
+                <div class="card mb-3 card-body shadow-sm">
+                    <h5>Nuevo Evento</h5>
+                    <form id="form-evento">
+                        <input type="text" id="nombre" class="form-control mb-2" placeholder="Nombre Evento" required>
+                        <input type="text" id="descripcion" class="form-control mb-2" placeholder="Breve descripción">
+                        <input type="text" id="lugar" class="form-control mb-2" placeholder="Lugar (ej. Santo Domingo)" required>
+                        <input type="datetime-local" id="fecha" class="form-control mb-2" required>
+                        <input type="number" id="capacidad" class="form-control mb-2" placeholder="Capacidad total" required>
+                        <button type="submit" class="btn btn-success w-100">Publicar Evento</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Listado -->
+            <div class="col-md-8">
+                <h3>Eventos Próximos</h3>
+                <div id="lista-eventos" class="row"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Función para cargar la lista de eventos
+        async function cargar() {
+            try {
+                const res = await fetch('/eventos');
+                const data = await res.json();
+                const div = document.getElementById('lista-eventos');
+                
+                div.innerHTML = data.map(e => `
+                    <div class="col-md-6 mb-3">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body">
+                                <h6 class="fw-bold">${e.nombre}</h6>
+                                <p class="small text-muted mb-1">${e.descripcion || 'Sin descripción'}</p>
+                                <p class="small mb-1">📍 ${e.lugar} | 📅 ${new Date(e.fecha).toLocaleDateString()}</p>
+                                <p class="badge bg-info text-dark">Cupos Totales: ${e.capacidad}</p>
+                                <hr>
+                                <div class="d-flex justify-content-between">
+                                    <button onclick="borrar(${e.id})" class="btn btn-outline-danger btn-sm">Borrar</button>
+                                    <button onclick="comprar(${e.id})" class="btn btn-primary btn-sm">Comprar Ticket</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error("Error cargando eventos:", error);
+            }
+        }
+
+        // Lógica para COMPRAR TICKET (Nueva y corregida)
+        async function comprar(id) {
+            const usuario = prompt("Ingresa tu nombre para la entrada:");
+            if (!usuario) return; // Cancelar si no hay nombre
+
+            try {
+                const res = await fetch('/entradas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        eventoId: id, 
+                        usuario: usuario, 
+                        cantidad: 1 
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert("¡Compra realizada con éxito!");
+                    cargar(); // Recargar para actualizar la vista
+                } else {
+                    // Manejo de error de capacidad (409) o no encontrado (404)
+                    alert("Error: " + (data.error || "No se pudo procesar la compra"));
+                }
+            } catch (error) {
+                alert("Error de conexión con el servidor");
+                console.error(error);
+            }
+        }
+
+        // Evento para PUBLICAR
+        document.getElementById('form-evento').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const body = {
+                nombre: document.getElementById('nombre').value,
+                descripcion: document.getElementById('descripcion').value,
+                lugar: document.getElementById('lugar').value,
+                fecha: document.getElementById('fecha').value,
+                capacidad: parseInt(document.getElementById('capacidad').value)
+            };
+
+            const res = await fetch('/eventos', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify(body) 
+            });
+
+            if (res.ok) {
+                cargar();
+                e.target.reset();
+            } else {
+                const err = await res.json();
+                alert("Error al publicar: " + err.error);
+            }
+        };
+
+        async function borrar(id) {
+            if(confirm('¿Seguro que deseas eliminar este evento?')) {
+                const res = await fetch(`/eventos/${id}`, { method: 'DELETE' });
+                if(res.ok) {
+                    cargar();
+                }
+            }
+        }
+
+        cargar();
+    </script>
+</body>
+</html>
