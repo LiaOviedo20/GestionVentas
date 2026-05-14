@@ -1,6 +1,6 @@
 const express = require('express');
-const sequelize = require('./config/db');
-const Evento = require('./models/Evento');
+const sequelize = require('./datos/database');;
+const Evento = require('./Models/Evento');
 
 const app = express();
 app.use(express.json());
