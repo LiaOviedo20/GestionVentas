@@ -1,15 +1,19 @@
-// datos/database.js
-
 const { Sequelize } = require('sequelize');
 
 const sequelize = new Sequelize(
-    'eventos_db',
-    'evento_user',
-    '12345',
+    process.env.DB_NAME,
+    process.env.DB_USER,
+    process.env.DB_PASSWORD,
     {
-        host: '127.0.0.1',
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT,
         dialect: 'mysql',
-        port: 3307
+        dialectOptions: {
+            ssl: {
+                require: true,
+                rejectUnauthorized: false
+            }
+        }
     }
 );
 
