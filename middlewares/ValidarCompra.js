@@ -1,4 +1,4 @@
-const Entrada = require('../models/Entrada');
+const Entrada = require('../Models/Entrada');
 
 module.exports = async (req, res, next) => {
     try {
