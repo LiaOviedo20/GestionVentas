@@ -5,3 +5,5 @@ const { postEntrada } = require('../controllers/entradaController');
 
 router.post('/', validarCompra, async (req, res) => {
 });
+
+module.exports = router;
